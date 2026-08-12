@@ -11,8 +11,6 @@
 #include <esp_wifi.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
-#include <network_provisioning/manager.h>
-#include <network_provisioning/scheme_ble.h>
 #include <esp_sntp.h>
 #include <esp_netif_sntp.h>
 #include <esp_mac.h>

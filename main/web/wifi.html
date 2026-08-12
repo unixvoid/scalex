@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scale Wi-Fi Setup</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div class="card">
+        <h1>Scale Setup</h1>
+        <p class="subtitle">Connect your scale to local Wi-Fi</p>
+
+        <div class="field-row">
+            <label for="ssidSelect">Wi-Fi SSID</label>
+            <select id="ssidSelect">
+                <option value="" disabled selected>Loading networks...</option>
+            </select>
+        </div>
+        <div class="field-row">
+            <label for="ssidInput">Or enter SSID manually</label>
+            <input id="ssidInput" type="text" placeholder="Network name" />
+        </div>
+        <div class="field-row">
+            <label for="passwordInput">Password</label>
+            <input id="passwordInput" type="password" placeholder="Password (optional)" />
+        </div>
+        <div class="modal-actions">
+            <button id="connectBtn" type="button">Connect</button>
+        </div>
+
+        <div class="status-row">
+            <p id="statusText">Connect to the device Wi-Fi and enter your network info.</p>
+        </div>
+    </div>
+
+    <script>
+        const ssidSelect = document.getElementById('ssidSelect');
+        const ssidInput = document.getElementById('ssidInput');
+        const passwordInput = document.getElementById('passwordInput');
+        const connectBtn = document.getElementById('connectBtn');
+        const statusText = document.getElementById('statusText');
+
+        function updateStatus(message) {
+            statusText.textContent = message;
+        }
+
+        async function loadNetworks() {
+            try {
+                const resp = await fetch('/api/wifi/networks');
+                if (!resp.ok) {
+                    throw new Error('Failed to load networks');
+                }
+
+                const networks = await resp.json();
+                ssidSelect.innerHTML = '';
+
+                if (networks.length === 0) {
+                    const option = document.createElement('option');
+                    option.textContent = 'No networks found';
+                    option.value = '';
+                    option.disabled = true;
+                    ssidSelect.appendChild(option);
+                    return;
+                }
+
+                const defaultOption = document.createElement('option');
+                defaultOption.textContent = 'Choose a network';
+                defaultOption.value = '';
+                defaultOption.disabled = true;
+                defaultOption.selected = true;
+                ssidSelect.appendChild(defaultOption);
+
+                networks.forEach((network) => {
+                    const option = document.createElement('option');
+                    option.value = network.ssid;
+                    option.textContent = `${network.ssid} (${network.rssi} dBm)`;
+                    ssidSelect.appendChild(option);
+                });
+            } catch (err) {
+                ssidSelect.innerHTML = '';
+                const option = document.createElement('option');
+                option.textContent = 'Unable to load networks';
+                option.value = '';
+                option.disabled = true;
+                ssidSelect.appendChild(option);
+                updateStatus('Unable to scan Wi-Fi networks. You can enter SSID manually.');
+            }
+        }
+
+        ssidSelect.addEventListener('change', () => {
+            ssidInput.value = ssidSelect.value;
+        });
+
+        async function connectWifi() {
+            connectBtn.disabled = true;
+            updateStatus('Saving credentials...');
+
+            const ssid = ssidInput.value.trim();
+            if (!ssid) {
+                updateStatus('Please choose or enter an SSID.');
+                connectBtn.disabled = false;
+                return;
+            }
+
+            const body = {
+                ssid,
+                password: passwordInput.value
+            };
+
+            try {
+                const resp = await fetch('/api/wifi/connect', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+
+                if (!resp.ok) {
+                    const text = await resp.text();
+                    updateStatus('Error: ' + (text || resp.statusText));
+                    connectBtn.disabled = false;
+                    return;
+                }
+
+                updateStatus('Credentials saved. Connecting...');
+                await new Promise((resolve) => setTimeout(resolve, 3000));
+                updateStatus('If connection succeeds, try opening scale.local or this page again.');
+            } catch (err) {
+                updateStatus('Network error while saving credentials.');
+                connectBtn.disabled = false;
+            }
+        }
+
+        connectBtn.addEventListener('click', connectWifi);
+        loadNetworks();
+    </script>
+</body>
+</html>

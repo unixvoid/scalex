@@ -2,8 +2,14 @@
 #define CONFIG_H
 
 // Application settings
-#define VERSION "1.0.8"
-#define PROOF_OF_POSSESSION ""
+#define VERSION "1.0.9"
+
+// Provisioning and network defaults
+#define PROV_AP_SSID "ScaleX"
+#define PROV_AP_CHANNEL 1
+#define PROV_AP_MAX_CONN 4
+#define MDNS_HOSTNAME "scale"
+#define MDNS_INSTANCE_NAME "scale"
 
 // GPIO definitions for new power/sense hardware
 #define USB_SENSE_GPIO  GPIO_NUM_3  // VUSB → 100k → IO3 (active HIGH, internal pulldown)
