@@ -1,0 +1,5 @@
+dependencies:
+  espressif/led_strip: "^3.0.0"
+  espressif/mdns: "^1.11.2"
+  espressif/network_provisioning: "^1.1.0"
+  espressif/cjson: "^1.7.19"

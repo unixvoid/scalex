@@ -1,0 +1,7 @@
+.vscode/
+.swp
+.DS_Store
+build/
+
+# Might be checked in down the road
+managed_components/

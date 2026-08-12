@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scale</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div class="card">
+        <h1>Live Scale</h1>
+        <p class="subtitle">Live weight reading</p>
+        <div class="weight-row">
+            <span class="weight" id="weight">--</span>
+            <span class="unit">g</span>
+        </div>
+        <div class="weight-imperial" id="weightImperial">--</div>
+        <button id="tareBtn" type="button">Tare</button>
+        <button class="cog-btn" id="settingsBtn" type="button" title="Settings">&#9881;</button>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal">
+            <button class="close-btn" id="closeModalBtn" type="button">&times;</button>
+            <h2>Scale Settings</h2>
+
+            <section class="settings-section">
+                <h3>Global brightness</h3>
+                <label for="globalBrightnessInput">Brightness</label>
+                <div class="brightness-row">
+                    <input id="globalBrightnessInput" type="range" min="0" max="255" value="255" />
+                    <span class="brightness-value" id="brightnessValue">255</span>
+                </div>
+            </section>
+
+            <section class="settings-section">
+                <h3>LED colors</h3>
+                <div class="color-field">
+                    <label for="scaleColorInput">Scale default color</label>
+                    <input id="scaleColorInput" type="color" />
+                </div>
+
+                <div class="modal-actions color-actions">
+                    <button id="saveColorsBtn" type="button">Save colors & brightness</button>
+                </div>
+            </section>
+
+            <section class="settings-section">
+                <h3>Calibration</h3>
+                <label for="calWeightInput">Calibration weight (g)</label>
+                <input id="calWeightInput" type="number" min="1" placeholder="e.g. 500" />
+
+                <div class="modal-actions">
+                    <button id="setCalWeightBtn" type="button">Set weight</button>
+                    <button id="calibrateBtn" type="button">Calibrate</button>
+                </div>
+            </section>
+
+            <section class="settings-section led-hardware-section">
+                <h3>LED hardware</h3>
+                <div class="field-row">
+                    <label for="scaleLedGpioInput">Scale LED Strip GPIO</label>
+                    <input id="scaleLedGpioInput" type="number" min="0" max="39" placeholder="6" />
+                </div>
+                <div class="field-row">
+                    <label for="scaleLedCountInput">Scale LED Count</label>
+                    <input id="scaleLedCountInput" type="number" min="0" max="255" placeholder="30" />
+                </div>
+                <div class="modal-actions">
+                    <button id="saveLedConfigBtn" type="button">Save LED hardware</button>
+                </div>
+            </section>
+
+            <p class="modal-status" id="modalStatus"></p>
+        </div>
+    </div>
+
+    <script>
+        const weightEl = document.getElementById('weight');
+        const weightImperialEl = document.getElementById('weightImperial');
+        const tareBtn = document.getElementById('tareBtn');
+        const settingsBtn = document.getElementById('settingsBtn');
+        const settingsModal = document.getElementById('settingsModal');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const calWeightInput = document.getElementById('calWeightInput');
+        const setCalWeightBtn = document.getElementById('setCalWeightBtn');
+        const calibrateBtn = document.getElementById('calibrateBtn');
+        const scaleColorInput = document.getElementById('scaleColorInput');
+        const saveColorsBtn = document.getElementById('saveColorsBtn');
+        const saveLedConfigBtn = document.getElementById('saveLedConfigBtn');
+        const modalStatus = document.getElementById('modalStatus');
+        const globalBrightnessInput = document.getElementById('globalBrightnessInput');
+        const brightnessValue = document.getElementById('brightnessValue');
+        const scaleLedGpioInput = document.getElementById('scaleLedGpioInput');
+        const scaleLedCountInput = document.getElementById('scaleLedCountInput');
+
+        const DEFAULT_SCALE_COLOR = '#4080ff';
+
+        // Adaptive exponential moving average:
+        //   - Large changes (>5g) → fast response (alpha=0.8)
+        //   - Medium changes (2-5g) → moderate smoothing (alpha=0.3)
+        //   - Small noise (<2g) → heavy smoothing (alpha=0.1)
+        let smoothedWeight = 0;
+        let hasSmoothedValue = false;
+
+        function updateWeight() {
+            fetch('/api/weight')
+                .then((response) => response.json())
+                .then((data) => {
+                    const raw = Number(data.weight_g || 0);
+                    if (!hasSmoothedValue) {
+                        smoothedWeight = raw;
+                        hasSmoothedValue = true;
+                    } else {
+                        const diff = Math.abs(raw - smoothedWeight);
+                        let alpha;
+                        if (diff > 5.0) {
+                            alpha = 0.8;   // fast response for large changes
+                        } else if (diff > 2.0) {
+                            alpha = 0.6;   // moderate for medium changes
+                        } else {
+                            alpha = 0.5;   // heavy smoothing for idle noise
+                        }
+                        smoothedWeight = smoothedWeight + alpha * (raw - smoothedWeight);
+                    }
+                    const value = Math.round(smoothedWeight);
+                    const displayValue = value > 5 ? value : 0;
+                    weightEl.textContent = displayValue;
+                    // Convert to lbs / oz
+                    const totalLbs = value / 453.59237;
+                    const lbs = Math.floor(totalLbs);
+                    const oz = (totalLbs - lbs) * 16;
+                    if (lbs > 0) {
+                        weightImperialEl.textContent = `${lbs} lb ${oz.toFixed(1)} oz`;
+                    } else {
+                        weightImperialEl.textContent = `${oz.toFixed(1)} oz`;
+                    }
+                })
+                .catch(() => {
+                    weightEl.textContent = '--';
+                    weightImperialEl.textContent = '--';
+                });
+        }
+
+        function postJson(url, body) {
+            return fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+        }
+
+        function loadColorSettings() {
+            fetch('/api/colors')
+                .then((response) => response.json())
+                .then((data) => {
+                    scaleColorInput.value = data.scale_color || DEFAULT_SCALE_COLOR;
+                    globalBrightnessInput.value = (typeof data.global_brightness === 'number' ? data.global_brightness : 255).toString();
+                    brightnessValue.textContent = globalBrightnessInput.value;
+                    scaleLedGpioInput.value = (typeof data.scale_led_gpio === 'number' ? data.scale_led_gpio : '');
+                    scaleLedCountInput.value = (typeof data.scale_led_count === 'number' ? data.scale_led_count : '');
+                })
+                .catch(() => {
+                    scaleColorInput.value = DEFAULT_SCALE_COLOR;
+                    globalBrightnessInput.value = '255';
+                    brightnessValue.textContent = '255';
+                    scaleLedGpioInput.value = '';
+                    scaleLedCountInput.value = '';
+                });
+        }
+
+        // Modal open / close
+        settingsBtn.addEventListener('click', () => {
+            settingsModal.classList.add('open');
+            modalStatus.textContent = '';
+            loadColorSettings();
+        });
+
+        function closeModal() {
+            settingsModal.classList.remove('open');
+        }
+
+        closeModalBtn.addEventListener('click', closeModal);
+
+        settingsModal.addEventListener('click', (e) => {
+            if (e.target === settingsModal) {
+                closeModal();
+            }
+        });
+
+        globalBrightnessInput.addEventListener('input', () => {
+            brightnessValue.textContent = globalBrightnessInput.value;
+        });
+
+        saveColorsBtn.addEventListener('click', () => {
+            saveColorsBtn.disabled = true;
+            postJson('/api/colors', {
+                scale_color: scaleColorInput.value,
+                global_brightness: Number(globalBrightnessInput.value)
+            })
+                .then((response) => {
+                    if (!response.ok) throw new Error('Save failed');
+                    modalStatus.textContent = 'LED colors saved';
+                })
+                .catch(() => {
+                    modalStatus.textContent = 'Failed to save LED colors';
+                })
+                .finally(() => {
+                    saveColorsBtn.disabled = false;
+                });
+        });
+
+        saveLedConfigBtn.addEventListener('click', () => {
+            const scaleGpio = Number(scaleLedGpioInput.value);
+            const scaleCount = Number(scaleLedCountInput.value);
+
+            if (!Number.isInteger(scaleGpio) || scaleGpio < 0 || scaleGpio > 39) {
+                modalStatus.textContent = 'GPIO must be an integer between 0 and 39';
+                return;
+            }
+            if (!Number.isInteger(scaleCount) || scaleCount < 0 || scaleCount > 255) {
+                modalStatus.textContent = 'LED counts must be an integer between 0 and 255';
+                return;
+            }
+
+            saveLedConfigBtn.disabled = true;
+            postJson('/api/led_config', {
+                scale_led_gpio: scaleGpio,
+                scale_led_count: scaleCount
+            })
+                .then((response) => {
+                    if (!response.ok) throw new Error('Save failed');
+                    modalStatus.textContent = 'LED hardware saved';
+                })
+                .catch(() => {
+                    modalStatus.textContent = 'Failed to save LED hardware';
+                })
+                .finally(() => {
+                    saveLedConfigBtn.disabled = false;
+                });
+        });
+
+        tareBtn.addEventListener('click', () => {
+            tareBtn.disabled = true;
+            fetch('/api/tare', { method: 'POST' })
+                .then(() => setTimeout(updateWeight, 250))
+                .finally(() => {
+                    setTimeout(() => {
+                        tareBtn.disabled = false;
+                    }, 500);
+                });
+        });
+
+        setCalWeightBtn.addEventListener('click', () => {
+            const value = Number(calWeightInput.value);
+            if (!value || value <= 0) {
+                modalStatus.textContent = 'Enter a valid calibration weight';
+                return;
+            }
+            setCalWeightBtn.disabled = true;
+            postJson('/api/cal_weight', value)
+                .then((response) => {
+                    if (!response.ok) throw new Error('Save failed');
+                    modalStatus.textContent = `Calibration weight set to ${value} g`;
+                })
+                .catch(() => {
+                    modalStatus.textContent = 'Failed to save calibration weight';
+                })
+                .finally(() => {
+                    setCalWeightBtn.disabled = false;
+                });
+        });
+
+        let calPollInterval = null;
+
+        function startCalibrationPolling() {
+            if (calPollInterval) clearInterval(calPollInterval);
+            calPollInterval = setInterval(() => {
+                fetch('/api/cal_status')
+                    .then((r) => r.json())
+                    .then((data) => {
+                        const state = data.state;
+                        const msg = data.message || '';
+                        if (state === 0) { // CAL_IDLE
+                            modalStatus.textContent = '';
+                            stopCalibrationPolling();
+                            calibrateBtn.disabled = false;
+                        } else if (state === 1) { // CAL_PLACE_WEIGHT
+                            modalStatus.textContent = msg || 'Calibrating... please place the calibration weight on the scale';
+                        } else if (state === 2) { // CAL_REMOVE_WEIGHT
+                            modalStatus.textContent = msg || 'Please remove the calibration weight from the scale.';
+                        } else if (state === 3) { // CAL_COMPLETE
+                            modalStatus.textContent = msg || 'Calibration complete';
+                            stopCalibrationPolling();
+                            setTimeout(() => {
+                                calibrateBtn.disabled = false;
+                            }, 1000);
+                        } else if (state === 4) { // CAL_FAILED
+                            modalStatus.textContent = msg || 'Calibration failed';
+                            stopCalibrationPolling();
+                            setTimeout(() => {
+                                calibrateBtn.disabled = false;
+                            }, 1000);
+                        }
+                    })
+                    .catch(() => {
+                        // Ignore polling errors
+                    });
+            }, 500);
+        }
+
+        function stopCalibrationPolling() {
+            if (calPollInterval) {
+                clearInterval(calPollInterval);
+                calPollInterval = null;
+            }
+        }
+
+        calibrateBtn.addEventListener('click', () => {
+            calibrateBtn.disabled = true;
+            modalStatus.textContent = 'Calibrating... please place the calibration weight on the scale';
+            startCalibrationPolling();
+            fetch('/api/calibrate', { method: 'POST' })
+                .catch(() => {
+                    modalStatus.textContent = 'Calibration failed';
+                    stopCalibrationPolling();
+                    setTimeout(() => {
+                        calibrateBtn.disabled = false;
+                    }, 1000);
+                });
+        });
+
+        setInterval(updateWeight, 250);
+        updateWeight();
+    </script>
+</body>
+</html>
