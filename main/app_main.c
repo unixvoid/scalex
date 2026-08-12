@@ -271,14 +271,32 @@ static void button_task(void *arg)
                 continue;
             }
 
-            ESP_LOGI(TAG, "Tare button pressed");
-            set_color_scale("blue");
-            HX711_tare();
-            set_color_scale("default");
+            TickType_t press_start = xTaskGetTickCount();
+            bool reset_pending = false;
 
             while (gpio_get_level(BUTTON_GPIO) == 1) {
-                vTaskDelay(pdMS_TO_TICKS(20));
+                TickType_t elapsed = xTaskGetTickCount() - press_start;
+                if (!reset_pending && elapsed >= pdMS_TO_TICKS(RESET_WIFI_HOLD_TIME)) {
+                    ESP_LOGW(TAG, "Wi-Fi reset button held for %d ms", RESET_WIFI_HOLD_TIME);
+                    set_color_scale("red");
+                    reset_pending = true;
+                }
+                vTaskDelay(pdMS_TO_TICKS(50));
             }
+
+            TickType_t held_time = xTaskGetTickCount() - press_start;
+            if (reset_pending) {
+                ESP_LOGW(TAG, "Button released after Wi-Fi reset hold: resetting credentials");
+                soft_reset();
+            } else if (held_time < pdMS_TO_TICKS(TARE_HOLD_TIME)) {
+                ESP_LOGI(TAG, "Button tap detected: performing tare");
+                set_color_scale("blue");
+                HX711_tare();
+            } else {
+                ESP_LOGI(TAG, "Button release after %u ms: no action", (unsigned int)(held_time * portTICK_PERIOD_MS));
+            }
+
+            set_color_scale("default");
         }
 
         vTaskDelay(pdMS_TO_TICKS(50));

@@ -71,15 +71,25 @@ bool have_endpoint_id() {
 void soft_reset() {
     ESP_LOGW(TAG, "Soft reset initiated! (Wi-Fi credentials only)");
 
-    // Erase only Wi-Fi credentials
+    nvs_handle_t nvs_handle;
+
+    // Erase credentials stored in IDF-managed Wi-Fi namespace.
     if (nvs_flash_init() == ESP_OK) {
-        nvs_handle_t nvs_handle;
         if (nvs_open("nvs.net80211", NVS_READWRITE, &nvs_handle) == ESP_OK) {
-            ESP_LOGW(TAG, "Erasing Wi-Fi credentials...");
+            ESP_LOGW(TAG, "Erasing Wi-Fi driver credentials...");
             nvs_erase_all(nvs_handle);
             nvs_commit(nvs_handle);
             nvs_close(nvs_handle);
         }
+    }
+
+    // Erase app-specific stored Wi-Fi credentials.
+    if (nvs_open("config", NVS_READWRITE, &nvs_handle) == ESP_OK) {
+        ESP_LOGW(TAG, "Erasing app Wi-Fi credentials...");
+        nvs_erase_key(nvs_handle, "wifi_ssid");
+        nvs_erase_key(nvs_handle, "wifi_password");
+        nvs_commit(nvs_handle);
+        nvs_close(nvs_handle);
     }
 
     ESP_LOGW(TAG, "Wi-Fi credentials erased. Restarting...");

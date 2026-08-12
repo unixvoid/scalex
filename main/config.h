@@ -16,12 +16,9 @@
 #define BATT_SENSE_GPIO GPIO_NUM_1  // VBAT/2 via 2×100k divider (digital detection)
 #define CAP_CONTROL_GPIO GPIO_NUM_2  // Bulk capacitor control transistor (HIGH = ON, LOW = OFF)
 
-// Button/power timing constants (ms)
+// Button timing constants (ms)
 #define TARE_HOLD_TIME          800   // tap-to-tare maximum hold time
-#define POWER_TOGGLE_HOLD_TIME 3000   // hold while ON → enter deep sleep
-#define RESET_WIFI_HOLD_TIME   3000   // hold while OFF + USB → erase WiFi credentials
-#define RESET_DEVICE_HOLD_TIME 6000   // hold while OFF + USB → factory reset (preserves scale_factor)
-#define DEMO_USB_HOLD_TIME     9000   // hold while OFF + USB → toggle demo mode
+#define RESET_WIFI_HOLD_TIME  6000   // hold to erase Wi-Fi credentials and reboot
 
 // HX711 load cell amp (scale) settings
 #define SCALE_FACTOR 128 // scale factor for weight in grams
