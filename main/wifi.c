@@ -673,6 +673,31 @@ static esp_err_t style_get_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
+static esp_err_t svg_get_handler(httpd_req_t *req)
+{
+    const char *uri = req->uri;
+    const char *data = NULL;
+    size_t len = 0;
+
+    if (strcmp(uri, "/refresh_24dp.svg") == 0) {
+        extern const char refresh_24dp_svg_start[] asm("_binary_refresh_24dp_svg_start");
+        extern const char refresh_24dp_svg_end[] asm("_binary_refresh_24dp_svg_end");
+        data = refresh_24dp_svg_start;
+        len = refresh_24dp_svg_end - refresh_24dp_svg_start;
+    } else if (strcmp(uri, "/visibility_24dp.svg") == 0) {
+        extern const char visibility_24dp_svg_start[] asm("_binary_visibility_24dp_svg_start");
+        extern const char visibility_24dp_svg_end[] asm("_binary_visibility_24dp_svg_end");
+        data = visibility_24dp_svg_start;
+        len = visibility_24dp_svg_end - visibility_24dp_svg_start;
+    } else {
+        return httpd_resp_send_404(req);
+    }
+
+    httpd_resp_set_type(req, "image/svg+xml");
+    httpd_resp_send(req, data, len);
+    return ESP_OK;
+}
+
 static esp_err_t weight_get_handler(httpd_req_t *req)
 {
     float weight_g = HX711_get_units_median(3);
@@ -1031,6 +1056,22 @@ httpd_handle_t start_webserver(void)
         .user_ctx = NULL
     };
     httpd_register_uri_handler(server, &style);
+
+    httpd_uri_t refresh_icon = {
+        .uri = "/refresh_24dp.svg",
+        .method = HTTP_GET,
+        .handler = svg_get_handler,
+        .user_ctx = NULL
+    };
+    httpd_register_uri_handler(server, &refresh_icon);
+
+    httpd_uri_t visibility_icon = {
+        .uri = "/visibility_24dp.svg",
+        .method = HTTP_GET,
+        .handler = svg_get_handler,
+        .user_ctx = NULL
+    };
+    httpd_register_uri_handler(server, &visibility_icon);
 
     httpd_uri_t wifi_page = {
         .uri = "/wifi",

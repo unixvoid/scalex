@@ -5,47 +5,294 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scale Wi-Fi Setup</title>
     <link rel="stylesheet" href="/style.css">
+    <style>
+        :root {
+            color-scheme: dark;
+            color: #eef2ff;
+            background: #0f172a;
+            font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: radial-gradient(circle at top, rgba(56, 189, 248, 0.12), transparent 28%),
+                        linear-gradient(180deg, #0f172a 0%, #020617 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+        }
+
+        .panel {
+            width: min(100%, 520px);
+            max-width: 520px;
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid rgba(148, 163, 184, 0.16);
+            border-radius: 24px;
+            box-shadow: 0 24px 90px rgba(0, 0, 0, 0.25);
+            padding: 1.5rem;
+            backdrop-filter: blur(18px);
+        }
+
+        .panel-header {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            margin-bottom: 1.6rem;
+        }
+
+        .panel-title {
+            margin: 0;
+            font-size: clamp(1.6rem, 2.5vw, 2.2rem);
+            letter-spacing: -0.02em;
+        }
+
+        .panel-copy {
+            margin: 0;
+            color: #94a3b8;
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        .field {
+            display: grid;
+            gap: 0.65rem;
+            margin-bottom: 1.2rem;
+        }
+
+        .field label {
+            font-size: 0.9rem;
+            color: #cbd5e1;
+            letter-spacing: 0.01em;
+        }
+
+        .input-row {
+            display: block;
+            width: 100%;
+        }
+
+        .select-wrap,
+        .password-wrap {
+            position: relative;
+            width: 100%;
+        }
+
+        .select-wrap::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            right: 4.1rem;
+            transform: translateY(-50%);
+            pointer-events: none;
+            background-image: linear-gradient(135deg, transparent 40%, rgba(15, 23, 42, 0.25) 40%, rgba(15, 23, 42, 0.25) 60%, transparent 60%),
+                              linear-gradient(to right, #94a3b8 0%, #94a3b8 100%);
+            background-repeat: no-repeat;
+            background-size: 8px 8px, 1px 14px;
+        }
+
+        select,
+        input {
+            width: 100%;
+            box-sizing: border-box;
+            border-radius: 16px;
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            background: rgba(15, 23, 42, 0.94);
+            color: #f8fafc;
+            padding: 1rem 1rem 1rem 1rem;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            appearance: none;
+            padding-right: 4.2rem;
+        }
+
+        select:focus,
+        input:focus {
+            border-color: rgba(56, 189, 248, 0.55);
+            box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.12);
+        }
+
+        .field-icon-button {
+            appearance: none;
+            position: absolute;
+            top: 50%;
+            right: 0.75rem;
+            transform: translateY(-50%);
+            border: none;
+            background: transparent;
+            color: #e2e8f0;
+            width: 42px;
+            height: 42px;
+            border-radius: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 1;
+            transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .field-icon-button:hover:not(:disabled) {
+            transform: translateY(-50%) translateY(-2px);
+            background: transparent;
+            border-color: transparent;
+            box-shadow: none;
+        }
+
+        .field-icon-button:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.35);
+        }
+
+        .field-icon-button:disabled {
+            opacity: 0.65;
+            cursor: wait;
+        }
+
+
+        .visually-hidden {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            margin: -1px;
+            padding: 0;
+            border: 0;
+            clip: rect(0 0 0 0);
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        @media (max-width: 420px) {
+            .panel {
+                padding: 1.25rem;
+            }
+
+            .field-icon-button {
+                width: 42px;
+                height: 42px;
+            }
+        }
+
+        .action-row {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 0.6rem;
+        }
+
+        .primary-btn {
+            width: 100%;
+            border: none;
+            border-radius: 18px;
+            padding: 1rem 1.1rem;
+            background: linear-gradient(135deg, #22c55e, #0ea5e9);
+            color: #0f172a;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+        }
+
+        .primary-btn:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 18px 40px rgba(14, 165, 233, 0.22);
+        }
+
+        .primary-btn:disabled {
+            opacity: 0.6;
+            cursor: wait;
+        }
+
+        .status {
+            margin: 1.2rem 0 0;
+            padding: 1rem 1rem;
+            border-radius: 18px;
+            background: rgba(15, 23, 42, 0.64);
+            border: 1px solid rgba(148, 163, 184, 0.12);
+            color: #cbd5e1;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        @media (max-width: 420px) {
+            .panel {
+                padding: 1.25rem;
+            }
+
+            .refresh-button,
+            .toggle-button {
+                width: 52px;
+                height: 52px;
+            }
+        }
+    </style>
 </head>
 <body>
-    <div class="card">
-        <h1>Scale Setup</h1>
-        <p class="subtitle">Connect your scale to local Wi-Fi</p>
+    <main class="panel" role="main">
+        <section class="panel-header">
+            <h1 class="panel-title">ScaleX Wi-Fi setup</h1>
+        </section>
 
-        <div class="field-row">
-            <label for="ssidSelect">Wi-Fi SSID</label>
-            <select id="ssidSelect">
-                <option value="" disabled selected>Loading networks...</option>
-            </select>
+        <div class="field">
+            <label for="ssidSelect">Wi-Fi Network</label>
+            <div class="input-row">
+                <div class="select-wrap">
+                    <select id="ssidSelect" aria-label="Wi-Fi network">
+                        <option value="" disabled selected>Loading networks...</option>
+                    </select>
+                    <button type="button" class="field-icon-button refresh-button" id="refreshBtn" aria-label="Refresh network list">
+                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor" aria-hidden="true"><path d="M480-160q-134 0-227-93t-93-227q0-134 93-227t227-93q69 0 132 28.5T720-690v-110h80v280H520v-80h168q-32-56-87.5-88T480-720q-100 0-170 70t-70 170q0 100 70 170t170 70q77 0 139-44t87-116h84q-28 106-114 173t-196 67Z"/></svg>
+                    </button>
+                </div>
+            </div>
         </div>
-        <div class="field-row">
-            <label for="ssidInput">Or enter SSID manually</label>
-            <input id="ssidInput" type="text" placeholder="Network name" />
-        </div>
-        <div class="field-row">
+
+        <div class="field">
             <label for="passwordInput">Password</label>
-            <input id="passwordInput" type="password" placeholder="Password (optional)" />
-        </div>
-        <div class="modal-actions">
-            <button id="connectBtn" type="button">Connect</button>
+            <div class="input-row">
+                <div class="password-wrap">
+                    <input id="passwordInput" type="password" placeholder="Leave empty for open Wi-Fi" autocomplete="off" />
+                    <button type="button" class="field-icon-button toggle-button" id="togglePassword" aria-label="Show password">
+                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor" id="toggleIcon" aria-hidden="true"><path d="M607.5-372.5Q660-425 660-500t-52.5-127.5Q555-680 480-680t-127.5 52.5Q300-575 300-500t52.5 127.5Q405-320 480-320t127.5-52.5Zm-204-51Q372-455 372-500t31.5-76.5Q435-608 480-608t76.5 31.5Q588-545 588-500t-31.5 76.5Q525-392 480-392t-76.5-31.5ZM214-281.5Q94-363 40-500q54-137 174-218.5T480-800q146 0 266 81.5T920-500q-54 137-174 218.5T480-200q-146 0-266-81.5ZM480-500Zm207.5 160.5Q782-399 832-500q-50-101-144.5-160.5T480-720q-113 0-207.5 59.5T128-500q50 101 144.5 160.5T480-280q113 0 207.5-59.5Z"/></svg>
+                    </button>
+                </div>
+            </div>
         </div>
 
-        <div class="status-row">
-            <p id="statusText">Connect to the device Wi-Fi and enter your network info.</p>
+        <div class="action-row">
+            <button id="connectBtn" class="primary-btn" type="button">Save & Connect</button>
         </div>
-    </div>
+    </main>
 
     <script>
         const ssidSelect = document.getElementById('ssidSelect');
-        const ssidInput = document.getElementById('ssidInput');
         const passwordInput = document.getElementById('passwordInput');
         const connectBtn = document.getElementById('connectBtn');
+        const refreshBtn = document.getElementById('refreshBtn');
         const statusText = document.getElementById('statusText');
+        const togglePassword = document.getElementById('togglePassword');
 
         function updateStatus(message) {
             statusText.textContent = message;
         }
 
+        function setLoading(loading) {
+            refreshBtn.disabled = loading;
+            connectBtn.disabled = loading;
+            if (loading) {
+                refreshBtn.style.opacity = '0.6';
+                connectBtn.style.opacity = '0.7';
+            } else {
+                refreshBtn.style.opacity = '';
+                connectBtn.style.opacity = '';
+            }
+        }
+
         async function loadNetworks() {
+            setLoading(true);
+            //updateStatus('Scanning networks...');
+
             try {
                 const resp = await fetch('/api/wifi/networks');
                 if (!resp.ok) {
@@ -53,55 +300,45 @@
                 }
 
                 const networks = await resp.json();
+
                 ssidSelect.innerHTML = '';
 
                 if (networks.length === 0) {
-                    const option = document.createElement('option');
-                    option.textContent = 'No networks found';
-                    option.value = '';
-                    option.disabled = true;
-                    ssidSelect.appendChild(option);
+                    ssidSelect.innerHTML = '<option value="" disabled selected>No networks found</option>';
+                    //updateStatus('No networks found. Try refreshing.');
                     return;
                 }
 
-                const defaultOption = document.createElement('option');
-                defaultOption.textContent = 'Choose a network';
-                defaultOption.value = '';
-                defaultOption.disabled = true;
-                defaultOption.selected = true;
-                ssidSelect.appendChild(defaultOption);
+                const placeholderOption = document.createElement('option');
+                placeholderOption.value = '';
+                placeholderOption.textContent = 'Please select a network';
+                placeholderOption.disabled = true;
+                placeholderOption.selected = true;
+                ssidSelect.appendChild(placeholderOption);
 
                 networks.forEach((network) => {
                     const option = document.createElement('option');
                     option.value = network.ssid;
-                    option.textContent = `${network.ssid} (${network.rssi} dBm)`;
+                    option.textContent = network.ssid;
                     ssidSelect.appendChild(option);
                 });
+
             } catch (err) {
-                ssidSelect.innerHTML = '';
-                const option = document.createElement('option');
-                option.textContent = 'Unable to load networks';
-                option.value = '';
-                option.disabled = true;
-                ssidSelect.appendChild(option);
-                updateStatus('Unable to scan Wi-Fi networks. You can enter SSID manually.');
+                ssidSelect.innerHTML = '<option value="" disabled selected>Unable to load networks</option>';
+            } finally {
+                setLoading(false);
             }
         }
 
-        ssidSelect.addEventListener('change', () => {
-            ssidInput.value = ssidSelect.value;
-        });
-
         async function connectWifi() {
-            connectBtn.disabled = true;
-            updateStatus('Saving credentials...');
-
-            const ssid = ssidInput.value.trim();
+            const ssid = ssidSelect.value.trim();
             if (!ssid) {
-                updateStatus('Please choose or enter an SSID.');
-                connectBtn.disabled = false;
+                //updateStatus('Please select a Wi-Fi network.');
                 return;
             }
+
+            connectBtn.disabled = true;
+            //updateStatus('Saving credentials...');
 
             const body = {
                 ssid,
@@ -118,20 +355,28 @@
                 if (!resp.ok) {
                     const text = await resp.text();
                     updateStatus('Error: ' + (text || resp.statusText));
-                    connectBtn.disabled = false;
                     return;
                 }
 
-                updateStatus('Credentials saved. Connecting...');
-                await new Promise((resolve) => setTimeout(resolve, 3000));
-                updateStatus('If connection succeeds, try opening scale.local or this page again.');
+                //updateStatus('Credentials saved. Connecting...');
+                await new Promise((resolve) => setTimeout(resolve, 2500));
+                //updateStatus('If connection succeeds, try opening scale.local or refresh this page.');
             } catch (err) {
                 updateStatus('Network error while saving credentials.');
+            } finally {
                 connectBtn.disabled = false;
             }
         }
 
+        refreshBtn.addEventListener('click', loadNetworks);
         connectBtn.addEventListener('click', connectWifi);
+
+        togglePassword.addEventListener('click', () => {
+            const visible = passwordInput.type === 'text';
+            passwordInput.type = visible ? 'password' : 'text';
+            togglePassword.setAttribute('aria-label', visible ? 'Show password' : 'Hide password');
+        });
+
         loadNetworks();
     </script>
 </body>
