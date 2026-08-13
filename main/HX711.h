@@ -46,7 +46,9 @@ unsigned long HX711_get_value(char times);
 // returns get_value() divided by SCALE, that is the raw value divided by a value obtained via calibration
 // times = how many readings to do
 float HX711_get_units_median(int times);
-
+// Cached weight values are populated by a dedicated HX711 sampling task.
+void HX711_start_sampling_task(void);
+float HX711_get_cached_weight(void);
 // EMA-filtered single reading for fast convergence detection
 float HX711_get_units_filtered(float *ema_state, float alpha);
 

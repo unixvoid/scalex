@@ -26,6 +26,11 @@ static float SCALE = 1.0f;
 static float WEIGHT_THRESHOLD_VAL = 5.0f;
 static int SCALE_STABILITY_TIME_MS = 100;
 
+static TaskHandle_t s_hx711_task_handle = NULL;
+static float s_cached_weight = 0.0f;
+static portMUX_TYPE s_cached_weight_mux = portMUX_INITIALIZER_UNLOCKED;
+static const TickType_t s_hx711_sample_delay = pdMS_TO_TICKS(200);
+
 void HX711_init(gpio_num_t dout, gpio_num_t pd_sck, HX711_GAIN gain)
 {
     ESP_LOGI(TAG, "Initializing HX711 with DOUT=GPIO%d, SCK=GPIO%d, GAIN=%d", dout, pd_sck, gain);
@@ -295,6 +300,39 @@ void HX711_power_down()
 void HX711_power_up()
 {
     gpio_set_level(GPIO_PD_SCK, LOW);
+}
+
+static void hx711_sample_task(void *arg)
+{
+    (void)arg;
+    while (1) {
+        float weight = HX711_get_units_median(3);
+
+        portENTER_CRITICAL(&s_cached_weight_mux);
+        s_cached_weight = weight;
+        portEXIT_CRITICAL(&s_cached_weight_mux);
+
+        vTaskDelay(s_hx711_sample_delay);
+    }
+}
+
+void HX711_start_sampling_task(void)
+{
+    if (s_hx711_task_handle != NULL) {
+        return;
+    }
+
+    s_cached_weight = 0.0f;
+    xTaskCreate(hx711_sample_task, "hx711_sampler", 4096, NULL, 5, &s_hx711_task_handle);
+}
+
+float HX711_get_cached_weight(void)
+{
+    float weight;
+    portENTER_CRITICAL(&s_cached_weight_mux);
+    weight = s_cached_weight;
+    portEXIT_CRITICAL(&s_cached_weight_mux);
+    return weight;
 }
 
 float HX711_get_weight_threshold()

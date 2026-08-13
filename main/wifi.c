@@ -39,6 +39,8 @@ static TaskHandle_t s_dns_task_handle = NULL;
 static bool s_dns_server_running = false;
 static int s_dns_sock = -1;
 static bool s_ap_enabled = false;
+static int s_sta_reconnect_attempts = 0;
+static const int MAX_STA_RECONNECT_ATTEMPTS = 5;
 
 static calibration_state_t s_cal_state = CAL_IDLE;
 static char s_cal_message[128] = "";
@@ -409,6 +411,34 @@ static void start_dns_server(void)
     xTaskCreate(dns_server_task, "dns_server", 4096, NULL, 5, &s_dns_task_handle);
 }
 
+static void wifi_start_ap(void)
+{
+    wifi_config_t ap_config = {
+        .ap = {
+            .ssid = PROV_AP_SSID,
+            .ssid_len = strlen(PROV_AP_SSID),
+            .channel = PROV_AP_CHANNEL,
+            .max_connection = PROV_AP_MAX_CONN,
+            .authmode = WIFI_AUTH_OPEN,
+        },
+    };
+
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &ap_config));
+    s_ap_enabled = true;
+}
+
+static void enable_provisioning_ap(void)
+{
+    if (s_ap_enabled) {
+        return;
+    }
+
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
+    wifi_start_ap();
+    start_dns_server();
+    ESP_LOGI(TAG, "AP provisioning mode active");
+}
+
 static esp_err_t wifi_status_get_handler(httpd_req_t *req)
 {
     char response[128];
@@ -612,7 +642,13 @@ static void event_handler(void *arg, esp_event_base_t event_base,
             ESP_LOGW(TAG, "Wi-Fi disconnected, reconnecting...");
             xEventGroupClearBits(wifi_event_group, WIFI_CONNECTED_EVENT);
             if (is_wifi_provisioned()) {
-                esp_wifi_connect();
+                if (!s_ap_enabled && s_sta_reconnect_attempts < MAX_STA_RECONNECT_ATTEMPTS) {
+                    s_sta_reconnect_attempts++;
+                    esp_wifi_connect();
+                } else if (!s_ap_enabled) {
+                    ESP_LOGI(TAG, "STA connect failed after %d attempts, enabling AP provisioning mode", s_sta_reconnect_attempts);
+                    enable_provisioning_ap();
+                }
             }
             break;
         case WIFI_EVENT_AP_START:
@@ -625,24 +661,9 @@ static void event_handler(void *arg, esp_event_base_t event_base,
         ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
         ESP_LOGI(TAG, "Connected with IP: " IPSTR, IP2STR(&event->ip_info.ip));
         xEventGroupSetBits(wifi_event_group, WIFI_CONNECTED_EVENT);
+        s_sta_reconnect_attempts = 0;
         stop_ap();
     }
-}
-
-static void wifi_start_ap(void)
-{
-    wifi_config_t ap_config = {
-        .ap = {
-            .ssid = PROV_AP_SSID,
-            .ssid_len = strlen(PROV_AP_SSID),
-            .channel = PROV_AP_CHANNEL,
-            .max_connection = PROV_AP_MAX_CONN,
-            .authmode = WIFI_AUTH_OPEN,
-        },
-    };
-
-    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &ap_config));
-    s_ap_enabled = true;
 }
 
 static void wifi_init_sta(void)
@@ -700,7 +721,7 @@ static esp_err_t svg_get_handler(httpd_req_t *req)
 
 static esp_err_t weight_get_handler(httpd_req_t *req)
 {
-    float weight_g = HX711_get_units_median(3);
+    float weight_g = HX711_get_cached_weight();
     if (weight_g < 0.0f) {
         weight_g = 0.0f;
     }
@@ -1190,21 +1211,26 @@ void init_wifi(void)
 
     esp_netif_create_default_wifi_ap();
 
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
-    wifi_start_ap();
-    ESP_ERROR_CHECK(esp_wifi_start());
+    bool provisioned = is_wifi_provisioned();
+    ESP_ERROR_CHECK(esp_wifi_set_mode(provisioned ? WIFI_MODE_STA : WIFI_MODE_APSTA));
 
-    start_dns_server();
-
-    if (is_wifi_provisioned()) {
+    if (!provisioned) {
+        wifi_start_ap();
+        ESP_ERROR_CHECK(esp_wifi_start());
+        start_dns_server();
+        ESP_LOGI(TAG, "No Wi-Fi credentials found, AP provisioning mode active");
+    } else {
         ESP_LOGI(TAG, "Wi-Fi credentials found, attempting STA connect");
         wifi_config_t sta_config = {0};
         if (load_sta_credentials(&sta_config) == ESP_OK) {
             ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &sta_config));
+            ESP_ERROR_CHECK(esp_wifi_start());
             esp_wifi_connect();
+        } else {
+            ESP_LOGW(TAG, "Wi-Fi credentials were provisioned but failed to load. Enabling AP provisioning mode.");
+            enable_provisioning_ap();
+            ESP_ERROR_CHECK(esp_wifi_start());
         }
-    } else {
-        ESP_LOGI(TAG, "No Wi-Fi credentials found, AP provisioning mode active");
     }
 
     // Start mDNS regardless of STA state so the device is discoverable by hostname.

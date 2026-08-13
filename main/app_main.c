@@ -326,6 +326,7 @@ void app_main(void)
     HX711_init(HX711_DT_GPIO, HX711_SCK_GPIO, eGAIN_128);
     vTaskDelay(pdMS_TO_TICKS(200));
     HX711_tare();
+    HX711_start_sampling_task();
 
     set_color_scale("default");
 
