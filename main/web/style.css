@@ -162,14 +162,23 @@ button:disabled {
     font-size: 0.9rem;
 }
 
-.modal .field-row input[type="number"] {
+.modal .field-row input[type="number"],
+.modal .field-row select {
     flex: 0 0 40%;
     min-width: 90px;
     padding: 0.65rem 0.85rem;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    background: #0f172a;
+    color: #f8fafc;
 }
 
-.modal .color-field input[type="color"],
-.modal .loop-color-row input[type="color"] {
+.modal .field-row select {
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.modal .color-field input[type="color"] {
     width: 100%;
     height: 44px;
     padding: 0;
@@ -182,33 +191,63 @@ button:disabled {
     overflow: hidden;
 }
 
-.modal .color-field input[type="color"]::-webkit-color-swatch-wrapper,
-.modal .loop-color-row input[type="color"]::-webkit-color-swatch-wrapper {
+.modal .color-field input[type="color"]::-webkit-color-swatch-wrapper {
     padding: 0;
     border-radius: 10px;
 }
 
-.modal .color-field input[type="color"]::-webkit-color-swatch,
-.modal .loop-color-row input[type="color"]::-webkit-color-swatch {
+.modal .color-field input[type="color"]::-webkit-color-swatch {
     border: none;
     border-radius: 10px;
 }
 
-.modal .loop-colors-list {
-    display: flex;
+.modal .loop-card {
+    display: none;
     flex-direction: column;
-    gap: 0.5rem;
-    margin-top: 0.45rem;
+    gap: 0.75rem;
+    padding: 1rem;
+    border: 1px solid #334155;
+    border-radius: 1rem;
+    background: #0f172a;
+    margin-top: 0.75rem;
 }
 
-.modal .loop-color-row {
+.modal .loop-card.visible {
     display: flex;
+}
+
+.modal .loop-card-title {
+    font-size: 0.9rem;
+    color: #f8fafc;
+    margin: 0;
+}
+
+.modal .loop-colors-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+}
+
+.modal .loop-checkbox {
+    display: inline-flex;
     align-items: center;
     gap: 0.5rem;
+    padding: 0.35rem 0.5rem;
+    border: none;
+    border-radius: 0.5rem;
+    background: transparent;
+    color: #f8fafc;
 }
 
-.modal .loop-color-row input[type="color"] {
-    flex: 1;
+.modal .loop-color-checkbox {
+    width: 1.1rem;
+    height: 1.1rem;
+}
+
+.modal .loop-color-label {
+    font-size: 0.9rem;
+    color: #f8fafc;
 }
 
 .modal .loop-color-row .remove-btn {

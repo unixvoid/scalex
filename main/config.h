@@ -32,7 +32,7 @@
 #define SETTLING_ROC_THRESHOLD 1.0f // Rate-of-change threshold for settling detection (grams/poll)
 
 // LED strip settings
-#define SCALE_LED_COUNT 22
+#define SCALE_LED_COUNT 21
 #define BRIGHTNESS_DEFAULT_SCALE 54
 #define BRIGHTNESS_DEFAULT_STATUS 72
 #define BRIGHTNESS_DEFAULT_GLOBAL 255
@@ -40,14 +40,7 @@
 #define DEFAULT_COLOR_SCALE_G 0
 #define DEFAULT_COLOR_SCALE_B 128
 
-//// // GPIO definitions - Test Device (XIAO ESP32C3)
-//// #define HX711_DT_GPIO GPIO_NUM_3
-//// #define HX711_SCK_GPIO GPIO_NUM_2
-//// #define BUTTON_GPIO GPIO_NUM_6
-//// #define SCALE_LED_GPIO GPIO_NUM_4
-//// #define STATUS_LED_GPIO GPIO_NUM_5
-
-// Production Device GPIO (ESP32-C3-Mini-1)
+// Production Device GPIO (ESP32-C3-WROOM)
 #define HX711_DT_GPIO GPIO_NUM_4
 #define HX711_SCK_GPIO GPIO_NUM_5
 #define BUTTON_GPIO GPIO_NUM_0
