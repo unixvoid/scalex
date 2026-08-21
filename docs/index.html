@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Flash ScaleX firmware directly from your browser.">
+  <title>ScaleX | Firmware flasher</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <a class="brand" href=".">Scale<span>X</span></a>
+      <div class="connection-state" id="connectionState"><i></i><span>Ready to connect</span></div>
+    </header>
+
+    <section class="hero" aria-labelledby="page-title">
+      <div class="hero-copy">
+        <p class="eyebrow">DEVICE UTILITY / 01</p>
+        <h1 id="page-title">ScaleX firmware.</h1>
+        <p class="lede">Give your ScaleX board its next build. Select a release, connect over USB, and let the browser handle the rest.</p>
+      </div>
+      <div class="readout" aria-label="Supported hardware">
+        <span class="readout-label">TARGET</span>
+        <strong>ESP32-C3</strong>
+        <span class="readout-meta">UART / USB</span>
+      </div>
+    </section>
+
+    <section class="flasher-panel" aria-labelledby="flash-heading">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">FLASH CONSOLE</p>
+          <h2 id="flash-heading">Choose your firmware</h2>
+        </div>
+        <span class="version-chip" id="selectedVersion">Loading releases...</span>
+      </div>
+
+      <div class="field-grid">
+        <label class="field">
+          <span>Firmware release</span>
+          <select id="releaseSelect" disabled>
+            <option>Fetching GitHub releases...</option>
+          </select>
+          <small id="releaseHint">Stable releases from unixvoid/scalex</small>
+        </label>
+        <div class="field asset-field">
+          <span>Flash image</span>
+          <div class="asset-name" id="assetName">Waiting for release data</div>
+          <small id="assetHint">Complete ESP32-C3 image</small>
+        </div>
+      </div>
+
+      <div class="action-row">
+        <esp-web-install-button id="espInstall">
+          <button class="flash-button" id="flashButton" slot="activate" type="button" disabled>
+            <span class="button-icon">↗</span>
+            <span>Connect &amp; flash</span>
+          </button>
+        </esp-web-install-button>
+        <a class="release-link" id="releaseLink" href="https://github.com/unixvoid/scalex/releases" target="_blank" rel="noreferrer">View release notes <span>↗</span></a>
+      </div>
+
+      <div class="progress-area" id="progressArea" aria-live="polite">
+        <div class="progress-head"><span id="progressLabel">Waiting for a device</span><span id="progressPercent">0%</span></div>
+        <div class="progress-track"><div class="progress-bar" id="progressBar"></div></div>
+        <p class="status-message" id="statusMessage">Connect your ScaleX device with a USB cable to begin.</p>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <span>ScaleX firmware utility</span>
+      <span class="footer-divider"></span>
+      <span>Runs locally in your browser</span>
+      <a href="https://github.com/unixvoid/scalex" target="_blank" rel="noreferrer">github.com/unixvoid/scalex ↗</a>
+    </footer>
+  </main>
+
+  <script type="module" src="https://unpkg.com/esp-web-tools@10.4.0/dist/web/install-button.js?module"></script>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
