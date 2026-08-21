@@ -6,7 +6,7 @@
 [![GitHub release](https://img.shields.io/github/v/release/unixvoid/scalex)](https://github.com/unixvoid/scalex/releases)
 [![ESP32](https://img.shields.io/badge/ESP32-important?labelColor=333&colorA=e34c26&colorB=11b1e3&logoColor=white&logo=espressif)]()
 
-**[Flash firmware directly from your browser → unixvoid.github.io/scalex](https://unixvoid.github.io/scalex/)**
+**[Flash firmware directly from your browser](https://unixvoid.github.io/scalex/)**
 
 </div>
 
