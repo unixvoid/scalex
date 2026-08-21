@@ -15,10 +15,7 @@ typedef enum {
 
 void init_wifi();
 bool is_wifi_connected();
-void toggle_demo_mode();
 httpd_handle_t start_webserver(void);
-void get_device_service_name(char *service_name, size_t max);
-void wait_for_pairing_key(void);
 
 // Calibration status API (called from HX711.c during calibration)
 void set_calibration_status(calibration_state_t state, const char *msg);

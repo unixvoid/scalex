@@ -1,0 +1,73 @@
+name: Build ScaleX firmware
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Set up ESP-IDF
+        uses: espressif/esp-idf-action@v2
+        with:
+          esp-idf: 'v6.0.1'
+          python: '3.11'
+          install: true
+
+      - name: Determine build version
+        id: version
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            VERSION="${GITHUB_REF#refs/tags/}"
+          else
+            VERSION="0.0.1"
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Project version: $VERSION"
+
+      - name: Patch sdkconfig project version from tag
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          python - <<'PY'
+          import pathlib, re, os
+          path = pathlib.Path('sdkconfig')
+          text = path.read_text()
+          version = os.environ['VERSION']
+          if 'CONFIG_APP_PROJECT_VER=' in text:
+              text = re.sub(r'CONFIG_APP_PROJECT_VER=".*"', f'CONFIG_APP_PROJECT_VER="{version}"', text)
+          else:
+              text = text.replace('# end of Application manager', f'CONFIG_APP_PROJECT_VER="{version}"\n# end of Application manager')
+          path.write_text(text)
+          PY
+
+      - name: Configure and build
+        run: |
+          idf.py set-target esp32c3
+          idf.py -B build -DPROJECT_VERSION=${VERSION} build
+
+      - name: Upload firmware artifacts
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/upload-artifact@v4
+        with:
+          name: scalex-${{ env.VERSION }}-firmware
+          path: |
+            build/*.bin
+            build/bootloader/bootloader.bin
+            build/partition_table/partition-table.bin

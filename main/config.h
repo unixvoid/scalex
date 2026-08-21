@@ -2,7 +2,6 @@
 #define CONFIG_H
 
 // Application settings
-#define VERSION "1.0.9"
 
 // Provisioning and network defaults
 #define PROV_AP_SSID "ScaleX"
@@ -11,9 +10,7 @@
 #define MDNS_HOSTNAME "scale"
 #define MDNS_INSTANCE_NAME "scale"
 
-// GPIO definitions for new power/sense hardware
-#define USB_SENSE_GPIO  GPIO_NUM_3  // VUSB → 100k → IO3 (active HIGH, internal pulldown)
-#define BATT_SENSE_GPIO GPIO_NUM_1  // VBAT/2 via 2×100k divider (digital detection)
+// GPIO definitions for current power/hardware
 #define CAP_CONTROL_GPIO GPIO_NUM_2  // Bulk capacitor control transistor (HIGH = ON, LOW = OFF)
 
 // Button timing constants (ms)
