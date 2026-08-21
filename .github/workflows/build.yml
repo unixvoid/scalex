@@ -25,11 +25,9 @@ jobs:
           python-version: '3.11'
 
       - name: Set up ESP-IDF
-        uses: espressif/esp-idf-action@v2
+        uses: espressif/install-esp-idf-action@v1
         with:
-          esp-idf: 'v6.0.1'
-          python: '3.11'
-          install: true
+          version: 'v6.0.1'
 
       - name: Determine build version
         id: version
