@@ -60,12 +60,29 @@ jobs:
           idf.py set-target esp32c3
           idf.py -B build -DPROJECT_VERSION=${VERSION} build
 
-      - name: Upload firmware artifacts
+      - name: Prepare release artifacts
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          mkdir -p release
+          cp build/scalex.bin "release/scalex-${VERSION}.bin"
+          mkdir -p "release/scalex-${VERSION}"
+          cp build/scalex.bin "release/scalex-${VERSION}/scalex.bin"
+          cp build/bootloader/bootloader.bin "release/scalex-${VERSION}/bootloader.bin"
+          cp build/partition_table/partition-table.bin "release/scalex-${VERSION}/partition-table.bin"
+          cp build/scalex.elf "release/scalex-${VERSION}/scalex.elf"
+          cp sdkconfig "release/scalex-${VERSION}/sdkconfig"
+          (cd release && zip -j "scalex-${VERSION}.zip" "scalex-${VERSION}"/*)
+
+      - name: Upload raw firmware binary
         if: startsWith(github.ref, 'refs/tags/')
         uses: actions/upload-artifact@v4
         with:
-          name: scalex-${{ env.VERSION }}-firmware
-          path: |
-            build/*.bin
-            build/bootloader/bootloader.bin
-            build/partition_table/partition-table.bin
+          name: scalex-${{ env.VERSION }}
+          path: release/scalex-${{ env.VERSION }}.bin
+
+      - name: Upload firmware bundle
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/upload-artifact@v4
+        with:
+          name: scalex-${{ env.VERSION }}-bundle
+          path: release/scalex-${{ env.VERSION }}.zip
