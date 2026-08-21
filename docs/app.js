@@ -28,15 +28,23 @@ function getFirmwareAsset(release) {
   return release.assets.find((asset) => asset.name === `scalex-${release.tag_name}.bin`) || release.assets.find((asset) => asset.name.endsWith('.bin'));
 }
 
-function firmwareUrl(release) {
-  return `${FIRMWARE_BASE_URL}/scalex-${release.tag_name}.bin`;
+function firmwareUrl(release, file) {
+  return `${FIRMWARE_BASE_URL}/${release.tag_name}/${file}`;
 }
 
 function createManifest(release) {
   return URL.createObjectURL(new Blob([JSON.stringify({
     name: 'ScaleX',
     version: release.tag_name,
-    builds: [{ chipFamily: 'ESP32-C3', parts: [{ path: firmwareUrl(release), offset: 0 }] }]
+    builds: [{
+      chipFamily: 'ESP32-C3',
+      parts: [
+        { path: firmwareUrl(release, 'bootloader.bin'), offset: 0x0 },
+        { path: firmwareUrl(release, 'partition-table.bin'), offset: 0x8000 },
+        { path: firmwareUrl(release, 'ota_data_initial.bin'), offset: 0x3d0000 },
+        { path: firmwareUrl(release, 'app.bin'), offset: 0x10000 }
+      ]
+    }]
   })], { type: 'application/json' }));
 }
 
