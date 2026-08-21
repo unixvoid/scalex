@@ -1,6 +1,6 @@
 const RELEASES_URL = 'https://api.github.com/repos/unixvoid/scalex/releases?per_page=30';
 const REPOSITORY_URL = 'https://github.com/unixvoid/scalex';
-const FIRMWARE_BASE_URL = 'https://unixvoid.s3.amazonaws.com/builds/scalex';
+const FIRMWARE_BASE_URL = 'https://unixvoid-builds.s3.amazonaws.com/scalex';
 const installButton = document.querySelector('#espInstall');
 const releaseSelect = document.querySelector('#releaseSelect');
 const flashButton = document.querySelector('#flashButton');
