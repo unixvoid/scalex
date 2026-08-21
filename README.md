@@ -1,6 +1,23 @@
+<div align="center">
+
 # ScaleX
 
-ESP32 based smart scale with WiFi and BLE connectivity.
+**ESP32-based smart scale with WiFi and BLE connectivity.**
+
+[![Firmware flasher](https://img.shields.io/badge/%F0%9F%94%A5%20Flasher-docs%2F-green.svg)](https://unixvoid.github.io/scalex/)
+[![GitHub release](https://img.shields.io/badge/release-latest-blue.svg)](https://github.com/unixvoid/scalex/releases)
+[![ESP32](https://img.shields.io/badge/ESP32-important?labelColor=333&colorA=e34c26&colorB=11b1e3&logoColor=white&logo=espressif)]()
+
+> **[Flash firmware directly from your browser → unixvoid.github.io/scalex](https://unixvoid.github.io/scalex/)**
+
+</div>
+
+## Overview
+
+ScaleX is an ESP32-powered smart scale that exposes WiFi and BLE connectivity for easy setup, data streaming, and firmware updates. Need to flash a new build? Use the hosted [web flasher](https://unixvoid.github.io/scalex/) - it talks to your device right from the browser.
+
+
+---
 
 ## Cutting a new version
 
