@@ -1,5 +1,6 @@
 const RELEASES_URL = 'https://api.github.com/repos/unixvoid/scalex/releases?per_page=30';
 const REPOSITORY_URL = 'https://github.com/unixvoid/scalex';
+const FIRMWARE_BASE_URL = 'https://unixvoid.s3.amazonaws.com/builds/scalex';
 const installButton = document.querySelector('#espInstall');
 const releaseSelect = document.querySelector('#releaseSelect');
 const flashButton = document.querySelector('#flashButton');
@@ -27,11 +28,15 @@ function getFirmwareAsset(release) {
   return release.assets.find((asset) => asset.name === `scalex-${release.tag_name}.bin`) || release.assets.find((asset) => asset.name.endsWith('.bin'));
 }
 
-function createManifest(release, asset) {
+function firmwareUrl(release) {
+  return `${FIRMWARE_BASE_URL}/scalex-${release.tag_name}.bin`;
+}
+
+function createManifest(release) {
   return URL.createObjectURL(new Blob([JSON.stringify({
     name: 'ScaleX',
     version: release.tag_name,
-    builds: [{ chipFamily: 'ESP32-C3', parts: [{ path: asset.browser_download_url, offset: 0 }] }]
+    builds: [{ chipFamily: 'ESP32-C3', parts: [{ path: firmwareUrl(release), offset: 0 }] }]
   })], { type: 'application/json' }));
 }
 
@@ -49,7 +54,7 @@ function chooseRelease() {
   assetName.textContent = asset.name;
   selectedVersion.textContent = activeRelease.tag_name;
   releaseLink.href = activeRelease.html_url || REPOSITORY_URL;
-  installButton.manifest = createManifest(activeRelease, asset);
+  installButton.manifest = createManifest(activeRelease);
   flashButton.disabled = false;
   setStatus('Connect your ScaleX device with a USB cable to begin.');
 }
