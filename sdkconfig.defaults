@@ -19,6 +19,10 @@ CONFIG_IDF_TARGET_ESP32C3=y
 CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
 CONFIG_ESPTOOLPY_FLASHSIZE="4MB"
 
+# Reserve USB Serial JTAG for Improv serial provisioning, not secondary console output
+CONFIG_ESP_CONSOLE_SECONDARY_NONE=y
+# CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG is not set
+
 # HTTP Server Configuration
 # Increase limits to handle longer URLs (query params) and headers
 CONFIG_HTTPD_MAX_REQ_HDR_LEN=2048

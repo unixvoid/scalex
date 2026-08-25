@@ -15,6 +15,8 @@ typedef enum {
 
 void init_wifi();
 bool is_wifi_connected();
+bool is_wifi_provisioned(void);
+esp_err_t wifi_connect_with_credentials(const char *ssid, const char *password);
 httpd_handle_t start_webserver(void);
 
 // Calibration status API (called from HX711.c during calibration)

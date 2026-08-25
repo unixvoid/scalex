@@ -9,6 +9,9 @@
 #define PROV_AP_MAX_CONN 4
 #define MDNS_HOSTNAME "scale"
 #define MDNS_INSTANCE_NAME "scale"
+#define FIRMWARE_NAME "ScaleX"
+#define FIRMWARE_VERSION "0.9.6"
+#define DEVICE_NAME "ScaleX Smart Scale"
 
 // GPIO definitions for current power/hardware
 #define CAP_CONTROL_GPIO GPIO_NUM_2  // Bulk capacitor control transistor (HIGH = ON, LOW = OFF)

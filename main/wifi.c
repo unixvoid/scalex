@@ -94,6 +94,8 @@ static esp_err_t write_nvs_string(const char *key, const char *value)
     return err;
 }
 
+static esp_err_t save_sta_credentials(const char *ssid, const char *password);
+
 // Called from HX711.c during calibration to update UI state
 void set_calibration_status(calibration_state_t state, const char *msg)
 {
@@ -122,10 +124,36 @@ bool is_wifi_connected(void)
     return (xEventGroupGetBits(wifi_event_group) & WIFI_CONNECTED_EVENT) != 0;
 }
 
-static bool is_wifi_provisioned(void)
+bool is_wifi_provisioned(void)
 {
     char ssid[33] = {0};
     return (read_nvs_string("wifi_ssid", ssid, sizeof(ssid)) == ESP_OK && ssid[0] != '\0');
+}
+
+esp_err_t wifi_connect_with_credentials(const char *ssid, const char *password)
+{
+    if (ssid == NULL || ssid[0] == '\0') {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    esp_err_t err = save_sta_credentials(ssid, password);
+    if (err != ESP_OK) {
+        return err;
+    }
+
+    wifi_config_t sta_config = {0};
+    strncpy((char *)sta_config.sta.ssid, ssid, sizeof(sta_config.sta.ssid) - 1);
+    if (password != NULL) {
+        strncpy((char *)sta_config.sta.password, password, sizeof(sta_config.sta.password) - 1);
+    }
+
+    err = esp_wifi_set_config(WIFI_IF_STA, &sta_config);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to configure STA: %s", esp_err_to_name(err));
+        return err;
+    }
+
+    return esp_wifi_connect();
 }
 
 static esp_err_t load_sta_credentials(wifi_config_t *config)
@@ -610,14 +638,7 @@ static esp_err_t wifi_post_handler(httpd_req_t *req)
     strncpy((char *)sta_config.sta.ssid, ssid, sizeof(sta_config.sta.ssid) - 1);
     strncpy((char *)sta_config.sta.password, password, sizeof(sta_config.sta.password) - 1);
 
-    err = esp_wifi_set_config(WIFI_IF_STA, &sta_config);
-    if (err != ESP_OK) {
-        cJSON_Delete(root);
-        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to configure STA");
-        return err;
-    }
-
-    err = esp_wifi_connect();
+    err = wifi_connect_with_credentials(ssid, password);
     cJSON_Delete(root);
     if (err != ESP_OK) {
         httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Failed to start STA connect");

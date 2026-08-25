@@ -7,6 +7,7 @@
 #include "led.h"
 #include "HX711.h"
 #include "utils.h"
+#include "improv.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -331,6 +332,9 @@ void app_main(void)
     set_color_scale("default");
 
     xTaskCreate(button_task, "button_task", 2048, NULL, 5, NULL);
+
+    ESP_LOGI(TAG, "Starting Improv Wi-Fi provisioning");
+    improv_start();
 
     ESP_LOGI(TAG, "Initializing Wi-Fi");
     init_wifi();
