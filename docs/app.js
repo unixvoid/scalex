@@ -50,11 +50,25 @@ async function loadReleases() {
   try {
     const response = await fetch(RELEASES_URL, { headers: { Accept: 'application/vnd.github+json' } });
     if (!response.ok) throw new Error(`GitHub returned ${response.status}`);
-    releases = (await response.json()).filter((release) => !release.draft && !release.prerelease && getFirmwareAsset(release));
+    releases = (await response.json())
+      .filter((release) => !release.draft && !release.prerelease && getFirmwareAsset(release))
+      .sort((a, b) => {
+        const versionA = a.tag_name.match(/^v?(\d+)\.(\d+)\.(\d+)(?:[-+].*)?$/);
+        const versionB = b.tag_name.match(/^v?(\d+)\.(\d+)\.(\d+)(?:[-+].*)?$/);
+
+        if (versionA && versionB) {
+          for (let i = 1; i <= 3; i += 1) {
+            const diff = Number(versionB[i]) - Number(versionA[i]);
+            if (diff) return diff;
+          }
+        }
+
+        return new Date(b.published_at) - new Date(a.published_at);
+      });
     if (!releases.length) throw new Error('No compatible releases found');
 
-    releaseSelect.replaceChildren(...releases.map((release) => {
-      const option = new Option(`${release.tag_name}  /  ${new Date(release.published_at).toLocaleDateString()}`, releases.indexOf(release));
+    releaseSelect.replaceChildren(...releases.map((release, index) => {
+      const option = new Option(`${release.tag_name}  /  ${new Date(release.published_at).toLocaleDateString()}`, index);
       return option;
     }));
     releaseSelect.disabled = false;
