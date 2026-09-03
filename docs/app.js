@@ -21,6 +21,7 @@ function createManifest(release) {
   return URL.createObjectURL(new Blob([JSON.stringify({
     name: 'ScaleX',
     version: release.tag_name,
+    new_install_prompt_erase: true,
     builds: [{
       chipFamily: 'ESP32-C3',
       parts: [
