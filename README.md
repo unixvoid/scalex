@@ -22,18 +22,16 @@ ScaleX is an ESP32-powered smart scale that exposes WiFi and BLE connectivity fo
 1. Create a git tag for the release, for example:
 
    ```bash
-   git tag v0.9.0
-   git push origin v0.9.0
+   git tag 1.0.2
+   git push origin 1.0.2
    ```
 
-2. The GitHub Actions workflow will detect the tag and build the firmware with that version.
-3. The build artifacts will be uploaded with the release version name.
-
-For development or non-tag builds, the fallback version is `0.0.1`.
+2. The GitHub Actions workflow detects the tag and builds the firmware. The version is resolved automatically by ESP-IDF from the git tag (`git describe --tags`), so the tag is the single source of truth. That version is embedded in the firmware and shown at the top of the Settings page in the device web UI.
+3. The build artifacts are uploaded under the release version name, and a GitHub Release is published.
 
 ## Build behavior
 
 - Pushes and pull requests to `main` run the build for CI/validation.
-- Untagged builds use the fallback version `0.0.1`.
-- Tagged builds like `v0.9.0` use the tag version and upload release artifacts.
+- Git tags are the source of truth for the version. Tagged builds like `1.0.2` embed that exact version and upload release artifacts.
+- Untagged/dev builds embed whatever `git describe` resolves to (e.g. `1.0.2-3-ga1b2c3d`).
 - Only tag-triggered builds upload firmware artifacts.

@@ -24,6 +24,7 @@
         <div class="modal">
             <button class="close-btn" id="closeModalBtn" type="button">&times;</button>
             <h2>Scale Settings</h2>
+            <p class="settings-version" id="settingsVersion"></p>
 
             <section class="settings-section">
                 <h3>Global brightness</h3>
@@ -73,6 +74,12 @@
             </section>
 
             <p class="modal-status" id="modalStatus"></p>
+
+            <section class="settings-section firmware-section">
+                <center>
+                    <p class="firmware-link">Flash the latest firmware version <a href="https://unixvoid.github.io/scalex/" target="_blank" rel="noreferrer">here</a>!</p>
+                </center>
+            </section>
         </div>
     </div>
 
@@ -170,11 +177,27 @@
                 });
         }
 
+        function loadVersion() {
+            const versionEl = document.getElementById('settingsVersion');
+            fetch('/api/version')
+                .then((response) => response.json())
+                .then((data) => {
+                    const version = String(data.version || '').replace(/^v/, '');
+                    if (version) {
+                        versionEl.textContent = `Version v${version}`;
+                    }
+                })
+                .catch(() => {
+                    // Leave the version empty if the endpoint is unavailable
+                });
+        }
+
         // Modal open / close
         settingsBtn.addEventListener('click', () => {
             settingsModal.classList.add('open');
             modalStatus.textContent = '';
             loadColorSettings();
+            loadVersion();
         });
 
         function closeModal() {

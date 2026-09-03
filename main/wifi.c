@@ -21,6 +21,7 @@
 #include <esp_event.h>
 #include <esp_netif.h>
 #include <esp_http_server.h>
+#include <esp_app_desc.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/event_groups.h>
 #include "esp_netif_defaults.h"
@@ -734,6 +735,19 @@ static esp_err_t weight_get_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
+static esp_err_t version_get_handler(httpd_req_t *req)
+{
+    const esp_app_desc_t *desc = esp_app_get_description();
+    const char *version = (desc != NULL) ? desc->version : "unknown";
+
+    char response[64];
+    snprintf(response, sizeof(response), "{\"version\":\"%s\"}", version);
+
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_send(req, response, HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
+}
+
 static esp_err_t tare_post_handler(httpd_req_t *req)
 {
     HX711_tare();
@@ -1133,6 +1147,14 @@ httpd_handle_t start_webserver(void)
         .user_ctx = NULL
     };
     httpd_register_uri_handler(server, &weight);
+
+    httpd_uri_t version = {
+        .uri = "/api/version",
+        .method = HTTP_GET,
+        .handler = version_get_handler,
+        .user_ctx = NULL
+    };
+    httpd_register_uri_handler(server, &version);
 
     httpd_uri_t tare = {
         .uri = "/api/tare",

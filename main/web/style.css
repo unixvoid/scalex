@@ -132,6 +132,13 @@ button:disabled {
     color: #f8fafc;
 }
 
+.modal .settings-version {
+    margin-top: -1rem;
+    margin-bottom: 1.5rem;
+    color: #94a3b8;
+    font-size: 0.85rem;
+}
+
 .modal .settings-section {
     border-top: 1px solid rgba(148, 163, 184, 0.2);
     padding-top: 1rem;
@@ -332,4 +339,21 @@ button:disabled {
     color: #cbd5e1;
     font-size: 0.9rem;
     min-height: 1.4em;
+}
+
+/* Firmware flasher link */
+.modal .firmware-link {
+    margin: 0;
+    color: #94a3b8;
+    font-size: 0.9rem;
+}
+
+.modal .firmware-link a {
+    color: #38bdf8;
+    text-decoration: none;
+    font-weight: 700;
+}
+
+.modal .firmware-link a:hover {
+    text-decoration: underline;
 }

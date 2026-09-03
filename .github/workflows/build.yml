@@ -31,40 +31,16 @@ jobs:
         with:
           version: 'v6.0.1'
 
-      - name: Determine build version
-        id: version
-        run: |
-          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
-            VERSION="${GITHUB_REF#refs/tags/}"
-          else
-            VERSION="0.0.1"
-          fi
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "Project version: $VERSION"
-
-      - name: Patch sdkconfig project version from tag
-        if: startsWith(github.ref, 'refs/tags/')
-        run: |
-          python - <<'PY'
-          import pathlib, re, os
-          path = pathlib.Path('sdkconfig')
-          text = path.read_text()
-          version = os.environ['VERSION']
-          if 'CONFIG_APP_PROJECT_VER=' in text:
-              text = re.sub(r'CONFIG_APP_PROJECT_VER=".*"', f'CONFIG_APP_PROJECT_VER="{version}"', text)
-          else:
-              text = text.replace('# end of Application manager', f'CONFIG_APP_PROJECT_VER="{version}"\n# end of Application manager')
-          path.write_text(text)
-          PY
-
       - name: Configure and build
         run: |
           idf.py set-target esp32c3
-          idf.py -B build -DPROJECT_VERSION=${VERSION} build
+          idf.py -B build build
 
       - name: Prepare release artifacts
         if: startsWith(github.ref, 'refs/tags/')
         run: |
+          VERSION="${GITHUB_REF#refs/tags/}"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
           mkdir -p release
           cp build/scalex.bin "release/scalex-${VERSION}.bin"
           mkdir -p "release/scalex-${VERSION}"
