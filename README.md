@@ -26,8 +26,16 @@ ScaleX is an ESP32-powered smart scale that exposes WiFi and BLE connectivity fo
    git push origin 1.0.2
    ```
 
+   Both `1.0.2` and `v1.0.2` style tags work — any tag that looks like a version
+   triggers the build.
+
 2. The GitHub Actions workflow detects the tag and builds the firmware. The version is resolved automatically by ESP-IDF from the git tag (`git describe --tags`), so the tag is the single source of truth. That version is embedded in the firmware and shown at the top of the Settings page in the device web UI.
 3. The build artifacts are uploaded under the release version name, and a GitHub Release is published.
+
+> **Note:** the web flasher only lists releases that have firmware assets. If a release
+> doesn't show up in the flasher dropdown, its tag build didn't produce artifacts
+> (for example, the tag was created from the GitHub UI before the workflow existed,
+> or it isn't a `v*`/`<digit>*` tag).
 
 ## Build behavior
 
