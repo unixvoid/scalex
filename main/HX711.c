@@ -211,7 +211,7 @@ void HX711_tare()
     ESP_LOGI(TAG, "Checking stability before tare...");
     const int stability_readings = 10;           // Number of readings to collect
     const int reading_interval_ms = 150;         // Interval between readings
-    const unsigned long max_variance = 800;      // Maximum allowed variance in raw units
+    const unsigned long max_variance = 1000;      // Maximum allowed variance in raw units
     const int max_attempts = 10;                  // Number of stability check cycles
     bool stable = false;
     
