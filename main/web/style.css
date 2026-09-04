@@ -140,8 +140,9 @@ button:disabled {
 }
 
 .modal .settings-section {
-    border-top: 1px solid rgba(148, 163, 184, 0.2);
-    padding-top: 1rem;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 12px;
+    padding: 1rem;
     margin-bottom: 1rem;
 }
 
@@ -149,6 +150,39 @@ button:disabled {
     margin: 0 0 0.85rem;
     font-size: 1rem;
     color: #e2e8f0;
+}
+
+/* Collapsible sections */
+.modal .collapsible-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+    padding: 0.25rem 0;
+}
+
+.modal .collapsible-header h3 {
+    margin: 0;
+}
+
+.modal .collapse-icon {
+    color: #94a3b8;
+    font-size: 0.8rem;
+    transition: transform 0.2s ease, color 0.2s;
+    transform: rotate(0deg);
+}
+
+.modal .collapsible-section:not(.collapsed) .collapse-icon {
+    transform: rotate(90deg);
+}
+
+.modal .collapsible-header:hover .collapse-icon {
+    color: #f8fafc;
+}
+
+.modal .collapsible-section.collapsed .collapsible-content {
+    display: none;
 }
 
 .modal .color-field {
@@ -356,4 +390,10 @@ button:disabled {
 
 .modal .firmware-link a:hover {
     text-decoration: underline;
+}
+
+/* No border on the firmware/version section */
+.modal .settings-section.firmware-section {
+    border: none;
+    border-radius: 0;
 }

@@ -25,54 +25,69 @@
             <button class="close-btn" id="closeModalBtn" type="button">&times;</button>
             <h2>Scale Settings</h2>
 
-            <section class="settings-section">
-                <h3>Global brightness</h3>
-                <label for="globalBrightnessInput">Brightness</label>
-                <div class="brightness-row">
-                    <input id="globalBrightnessInput" type="range" min="0" max="255" value="255" />
-                    <span class="brightness-value" id="brightnessValue">255</span>
+            <section class="settings-section collapsible-section">
+                <div class="collapsible-header">
+                    <h3>Colors & brightness</h3>
+                    <span class="collapse-icon" aria-hidden="true">&#9654;</span>
+                </div>
+                <div class="collapsible-content">
+                    <label for="globalBrightnessInput">Brightness</label>
+                    <div class="brightness-row">
+                        <input id="globalBrightnessInput" type="range" min="0" max="255" value="255" />
+                        <span class="brightness-value" id="brightnessValue">255</span>
+                    </div>
+
+                    <div class="color-field">
+                        <br />
+                        <label for="scaleColorInput">Scale default color</label>
+                        <input id="scaleColorInput" type="color" />
+                    </div>
+
+                    <div class="modal-actions color-actions">
+                        <button id="saveColorsBtn" type="button">Save colors & brightness</button>
+                    </div>
                 </div>
             </section>
 
-            <section class="settings-section">
-                <h3>LED colors</h3>
-                <div class="color-field">
-                    <label for="scaleColorInput">Scale default color</label>
-                    <input id="scaleColorInput" type="color" />
+            <section class="settings-section collapsible-section collapsed" data-default-collapsed>
+                <div class="collapsible-header">
+                    <h3>Calibration</h3>
+                    <span class="collapse-icon" aria-hidden="true">&#9654;</span>
                 </div>
+                <div class="collapsible-content">
+                    <label for="calWeightInput">Calibration weight (g)</label>
+                    <input id="calWeightInput" type="number" min="1" placeholder="e.g. 500" />
 
-                <div class="modal-actions color-actions">
-                    <button id="saveColorsBtn" type="button">Save colors & brightness</button>
+                    <div class="modal-actions">
+                        <button id="setCalWeightBtn" type="button">Set weight</button>
+                        <button id="calibrateBtn" type="button">Calibrate</button>
+                    </div>
                 </div>
             </section>
 
-            <section class="settings-section">
-                <h3>Calibration</h3>
-                <label for="calWeightInput">Calibration weight (g)</label>
-                <input id="calWeightInput" type="number" min="1" placeholder="e.g. 500" />
-
-                <div class="modal-actions">
-                    <button id="setCalWeightBtn" type="button">Set weight</button>
-                    <button id="calibrateBtn" type="button">Calibrate</button>
+            <section class="settings-section led-hardware-section collapsible-section collapsed" data-default-collapsed>
+                <div class="collapsible-header">
+                    <h3>LED hardware</h3>
+                    <span class="collapse-icon" aria-hidden="true">&#9654;</span>
+                </div>
+                <div class="collapsible-content">
+                    <div class="field-row">
+                        <label for="scaleLedGpioInput">Scale LED Strip GPIO</label>
+                        <input id="scaleLedGpioInput" type="number" min="0" max="39" placeholder="6" />
+                    </div>
+                    <div class="field-row">
+                        <label for="scaleLedCountInput">Scale LED Count</label>
+                        <input id="scaleLedCountInput" type="number" min="0" max="255" placeholder="30" />
+                    </div>
+                    <div class="modal-actions">
+                        <button id="saveLedConfigBtn" type="button">Save LED hardware</button>
+                    </div>
                 </div>
             </section>
 
-            <section class="settings-section led-hardware-section">
-                <h3>LED hardware</h3>
-                <div class="field-row">
-                    <label for="scaleLedGpioInput">Scale LED Strip GPIO</label>
-                    <input id="scaleLedGpioInput" type="number" min="0" max="39" placeholder="6" />
-                </div>
-                <div class="field-row">
-                    <label for="scaleLedCountInput">Scale LED Count</label>
-                    <input id="scaleLedCountInput" type="number" min="0" max="255" placeholder="30" />
-                </div>
-                <div class="modal-actions">
-                    <button id="saveLedConfigBtn" type="button">Save LED hardware</button>
-                </div>
-            </section>
-
-            <p class="modal-status" id="modalStatus"></p>
+            <center>
+                <p class="modal-status" id="modalStatus"></p>
+            </center>
 
             <section class="settings-section firmware-section">
                 <center>
@@ -198,6 +213,11 @@
             modalStatus.textContent = '';
             loadColorSettings();
             loadVersion();
+            // Reset collapsible sections to their default state
+            document.querySelectorAll('.collapsible-section').forEach(section => {
+                const shouldCollapse = section.hasAttribute('data-default-collapsed');
+                section.classList.toggle('collapsed', shouldCollapse);
+            });
         });
 
         function closeModal() {
@@ -210,6 +230,16 @@
             if (e.target === settingsModal) {
                 closeModal();
             }
+        });
+
+        // Collapsible section headers — click to toggle visibility
+        document.querySelectorAll('.collapsible-header').forEach(header => {
+            header.addEventListener('click', () => {
+                const section = header.closest('.collapsible-section');
+                if (section) {
+                    section.classList.toggle('collapsed');
+                }
+            });
         });
 
         globalBrightnessInput.addEventListener('input', () => {
