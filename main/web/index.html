@@ -134,8 +134,8 @@
                     const value = Math.round(smoothedWeight);
                     const displayValue = value > 5 ? value : 0;
                     weightEl.textContent = displayValue;
-                    // Convert to lbs / oz
-                    const totalLbs = value / 453.59237;
+                    // Convert to lbs / oz (use displayValue so oz matches grams when suppressed)
+                    const totalLbs = displayValue / 453.59237;
                     const lbs = Math.floor(totalLbs);
                     const oz = (totalLbs - lbs) * 16;
                     if (lbs > 0) {
