@@ -631,6 +631,31 @@ static esp_err_t wifi_post_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
+static void mdns_update_alias_address(void)
+{
+    esp_netif_ip_info_t ip_info;
+    esp_netif_t *netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+
+    if (netif == NULL || esp_netif_get_ip_info(netif, &ip_info) != ESP_OK || ip_info.ip.addr == IPADDR_ANY) {
+        netif = esp_netif_get_handle_from_ifkey("WIFI_AP_DEF");
+        if (netif == NULL || esp_netif_get_ip_info(netif, &ip_info) != ESP_OK || ip_info.ip.addr == IPADDR_ANY) {
+            return;
+        }
+    }
+
+    mdns_ip_addr_t addr = {0};
+    addr.addr.type = ESP_IPADDR_TYPE_V4;
+    addr.addr.u_addr.ip4 = ip_info.ip;
+    addr.next = NULL;
+
+    esp_err_t err = mdns_delegate_hostname_set_address(MDNS_HOSTNAME_ALIAS, &addr);
+    if (err == ESP_OK) {
+        ESP_LOGI(TAG, "mDNS alias %s.local -> " IPSTR, MDNS_HOSTNAME_ALIAS, IP2STR(&ip_info.ip));
+    } else {
+        ESP_LOGW(TAG, "Failed to update mDNS alias %s.local: %s", MDNS_HOSTNAME_ALIAS, esp_err_to_name(err));
+    }
+}
+
 static void event_handler(void *arg, esp_event_base_t event_base,
                           int32_t event_id, void *event_data)
 {
@@ -654,6 +679,7 @@ static void event_handler(void *arg, esp_event_base_t event_base,
             break;
         case WIFI_EVENT_AP_START:
             ESP_LOGI(TAG, "Provisioning AP started: SSID=%s", PROV_AP_SSID);
+            mdns_update_alias_address();
             break;
         default:
             break;
@@ -664,6 +690,7 @@ static void event_handler(void *arg, esp_event_base_t event_base,
         xEventGroupSetBits(wifi_event_group, WIFI_CONNECTED_EVENT);
         s_sta_reconnect_attempts = 0;
         stop_ap();
+        mdns_update_alias_address();
     }
 }
 
@@ -1260,5 +1287,16 @@ void init_wifi(void)
     ESP_ERROR_CHECK(mdns_hostname_set(MDNS_HOSTNAME));
     ESP_ERROR_CHECK(mdns_instance_name_set(MDNS_INSTANCE_NAME));
     ESP_ERROR_CHECK(mdns_service_add(MDNS_INSTANCE_NAME, "_http", "_tcp", 80, NULL, 0));
-    ESP_LOGI(TAG, "mDNS ready at %s.local", MDNS_HOSTNAME);
+
+    // Also answer on the alias hostname (scalex.local). Delegated hostnames
+    // need an explicit address list, which is (re)applied whenever an interface
+    // gets an IP (see mdns_update_alias_address()).
+    esp_err_t alias_err = mdns_delegate_hostname_add(MDNS_HOSTNAME_ALIAS, NULL);
+    if (alias_err == ESP_OK) {
+        mdns_update_alias_address();
+        ESP_LOGI(TAG, "mDNS ready at %s.local and %s.local", MDNS_HOSTNAME, MDNS_HOSTNAME_ALIAS);
+    } else {
+        ESP_LOGW(TAG, "mDNS alias %s.local unavailable: %s", MDNS_HOSTNAME_ALIAS, esp_err_to_name(alias_err));
+        ESP_LOGI(TAG, "mDNS ready at %s.local", MDNS_HOSTNAME);
+    }
 }

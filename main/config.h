@@ -8,6 +8,7 @@
 #define PROV_AP_CHANNEL 1
 #define PROV_AP_MAX_CONN 4
 #define MDNS_HOSTNAME "scale"
+#define MDNS_HOSTNAME_ALIAS "scalex"
 #define MDNS_INSTANCE_NAME "scale"
 
 // GPIO definitions for current power/hardware

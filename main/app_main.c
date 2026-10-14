@@ -259,6 +259,69 @@ void config_nvs_dump_all(void)
     nvs_close(handle);
 }
 
+static volatile bool s_tare_in_progress = false;
+static bool s_tare_starts_sampler = false;
+static TaskHandle_t s_tare_task_handle = NULL;
+
+static void tare_task(void *arg)
+{
+    (void)arg;
+    bool start_sampler = s_tare_starts_sampler;
+
+    HX711_tare();
+
+    s_tare_in_progress = false;
+    s_tare_starts_sampler = false;
+    s_tare_task_handle = NULL;
+    set_color_scale("default");
+
+    // The initial (boot) tare starts the sampling task only after the offset
+    // has been measured so the two cannot interfere with each other.
+    if (start_sampler) {
+        HX711_start_sampling_task();
+    }
+
+    vTaskDelete(NULL);
+}
+
+static void start_tare_internal(bool start_sampler)
+{
+    if (s_tare_in_progress) {
+        ESP_LOGW(TAG, "Tare already in progress, ignoring request");
+        return;
+    }
+
+    s_tare_in_progress = true;
+    s_tare_starts_sampler = start_sampler;
+
+    if (xTaskCreate(tare_task, "tare_task", 4096, NULL, 5, &s_tare_task_handle) != pdPASS) {
+        ESP_LOGE(TAG, "Failed to start tare task");
+        s_tare_task_handle = NULL;
+        s_tare_in_progress = false;
+        s_tare_starts_sampler = false;
+        set_color_scale("default");
+        // Never leave the scale without a sampling task on boot.
+        if (start_sampler) {
+            HX711_start_sampling_task();
+        }
+        return;
+    }
+
+    set_color_scale("blue");
+}
+
+// Tare requested by the user (button tap).
+static void start_tare(void)
+{
+    start_tare_internal(false);
+}
+
+// Initial tare at boot; starts the sampling task once the offset is ready.
+static void start_boot_tare(void)
+{
+    start_tare_internal(true);
+}
+
 static void button_task(void *arg)
 {
     gpio_set_direction(BUTTON_GPIO, GPIO_MODE_INPUT);
@@ -272,31 +335,25 @@ static void button_task(void *arg)
             }
 
             TickType_t press_start = xTaskGetTickCount();
-            bool reset_pending = false;
 
             while (gpio_get_level(BUTTON_GPIO) == 1) {
                 TickType_t elapsed = xTaskGetTickCount() - press_start;
-                if (!reset_pending && elapsed >= pdMS_TO_TICKS(RESET_WIFI_HOLD_TIME)) {
-                    ESP_LOGW(TAG, "Wi-Fi reset button held for %d ms", RESET_WIFI_HOLD_TIME);
+                if (elapsed >= pdMS_TO_TICKS(RESET_WIFI_HOLD_TIME)) {
+                    ESP_LOGW(TAG, "Reset button held for %d ms: resetting device", RESET_WIFI_HOLD_TIME);
                     set_color_scale("red");
-                    reset_pending = true;
+                    vTaskDelay(pdMS_TO_TICKS(250));  // brief red indication before reboot
+                    soft_reset();  // erases Wi-Fi credentials and restarts (never returns)
                 }
                 vTaskDelay(pdMS_TO_TICKS(50));
             }
 
             TickType_t held_time = xTaskGetTickCount() - press_start;
-            if (reset_pending) {
-                ESP_LOGW(TAG, "Button released after Wi-Fi reset hold: resetting credentials");
-                soft_reset();
-            } else if (held_time < pdMS_TO_TICKS(TARE_HOLD_TIME)) {
+            if (held_time < pdMS_TO_TICKS(TARE_HOLD_TIME)) {
                 ESP_LOGI(TAG, "Button tap detected: performing tare");
-                set_color_scale("blue");
-                HX711_tare();
+                start_tare();
             } else {
                 ESP_LOGI(TAG, "Button release after %u ms: no action", (unsigned int)(held_time * portTICK_PERIOD_MS));
             }
-
-            set_color_scale("default");
         }
 
         vTaskDelay(pdMS_TO_TICKS(50));
@@ -325,12 +382,11 @@ void app_main(void)
     ESP_LOGI(TAG, "Initializing HX711");
     HX711_init(HX711_DT_GPIO, HX711_SCK_GPIO, eGAIN_128);
     vTaskDelay(pdMS_TO_TICKS(200));
-    HX711_tare();
-    HX711_start_sampling_task();
-
-    set_color_scale("default");
 
     xTaskCreate(button_task, "button_task", 2048, NULL, 5, NULL);
+
+    ESP_LOGI(TAG, "Starting initial tare");
+    start_boot_tare();
 
     ESP_LOGI(TAG, "Initializing Wi-Fi");
     init_wifi();
@@ -338,7 +394,7 @@ void app_main(void)
     ESP_LOGI(TAG, "Starting web server");
     start_webserver();
 
-    ESP_LOGI(TAG, "Scale ready at http://scale.local/");
+    ESP_LOGI(TAG, "Scale ready at http://%s.local/ (also %s.local)", MDNS_HOSTNAME, MDNS_HOSTNAME_ALIAS);
 
     while (1) {
         vTaskDelay(pdMS_TO_TICKS(1000));
